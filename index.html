@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Carlos Tracker V1.1</title>
+    <title>Carlos Tracker V2.0</title>
     <style>
         :root {
             --bg-color: #000000;
@@ -16,6 +16,7 @@
             --accent-red: #ff453a;
             --accent-yellow: #ffd60a;
             --accent-blue: #0a84ff;
+            --accent-purple: #bf5af2;
             --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
@@ -25,17 +26,17 @@
             font-family: var(--font-stack);
             margin: 0;
             padding: 0;
-            padding-bottom: 80px; /* Space for nav */
+            padding-bottom: 90px;
             -webkit-user-select: none;
         }
 
-        /* Typography & Header */
+        /* --- Header & Typography --- */
         h1, h2, h3 { margin: 0; font-weight: 600; }
         .header {
             padding: 20px;
-            padding-top: 50px; /* Status bar space */
-            background: rgba(28, 28, 30, 0.8);
-            backdrop-filter: blur(10px);
+            padding-top: 50px;
+            background: rgba(28, 28, 30, 0.85);
+            backdrop-filter: blur(20px);
             position: sticky;
             top: 0;
             z-index: 100;
@@ -44,120 +45,160 @@
             justify-content: space-between;
             align-items: center;
         }
+        .date-display { font-size: 0.9em; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; font-weight: bold;}
 
-        .date-display { font-size: 0.9em; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;}
-        
-        /* Containers */
-        .container { padding: 16px; display: none; animation: fadeIn 0.3s ease; }
+        /* --- Layout & Cards --- */
+        .container { padding: 16px; display: none; animation: fadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
         .container.active { display: block; }
         
         .card {
             background-color: var(--card-bg);
-            border-radius: 16px;
+            border-radius: 18px;
             padding: 20px;
             margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
         }
+        .card:active { transform: scale(0.98); }
 
-        /* Form Elements */
-        label { display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 0.9em; }
+        /* --- Inputs --- */
+        label { display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 0.85em; letter-spacing: 0.5px;}
         input, select {
             width: 100%;
             background: #2c2c2e;
-            border: none;
+            border: 1px solid transparent;
             color: white;
-            padding: 12px;
-            border-radius: 10px;
+            padding: 14px;
+            border-radius: 12px;
             font-size: 16px;
-            box-sizing: border-box; /* Fix padding issue */
-            margin-bottom: 15px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            transition: all 0.3s;
         }
-        /* Estilo especial para el input de fecha en iOS */
+        input:focus, select:focus { 
+            outline: none; 
+            border-color: var(--accent-blue);
+            background: #3a3a3c;
+        }
         input[type="date"] {
-            appearance: none;
-            -webkit-appearance: none;
             color: var(--accent-blue);
             font-weight: bold;
             text-align: center;
         }
-        input:focus { outline: 2px solid var(--accent-green); }
 
-        /* Buttons */
+        /* --- Buttons --- */
         .btn {
-            background-color: var(--accent-green);
+            background: var(--accent-green);
             color: black;
             border: none;
-            padding: 16px;
-            border-radius: 12px;
+            padding: 18px;
+            border-radius: 14px;
             width: 100%;
-            font-weight: bold;
-            font-size: 16px;
+            font-weight: 700;
+            font-size: 17px;
             cursor: pointer;
-            margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(50, 215, 75, 0.3);
         }
-        .btn-water {
-            background-color: var(--accent-blue);
+        .btn:active { opacity: 0.8; transform: scale(0.98); }
+
+        /* --- Water Tank Animation --- */
+        .water-tank-container {
+            position: relative;
+            width: 120px;
+            height: 180px;
+            background: #2c2c2e;
+            border-radius: 20px;
+            margin: 20px auto;
+            overflow: hidden;
+            border: 2px solid #333;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        .water-level {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0%; /* JS changes this */
+            background: linear-gradient(180deg, #0a84ff 0%, #0056b3 100%);
+            transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0.9;
+        }
+        .water-level::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: rgba(255,255,255,0.3);
+        }
+        .water-text-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            text-align: center;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        /* --- Visual Elements --- */
+        .timeline-day {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #333;
         }
-        
-        /* Navigation */
+        .day-indicator { width: 50px; font-weight: bold; color: var(--text-secondary); font-size: 0.9em; }
+        .day-content { flex: 1; font-size: 0.95em; }
+        .tag {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .tag-run { background: rgba(10, 132, 255, 0.15); color: var(--accent-blue); border: 1px solid rgba(10, 132, 255, 0.3); }
+        .tag-func { background: rgba(255, 69, 58, 0.15); color: var(--accent-red); border: 1px solid rgba(255, 69, 58, 0.3); }
+        .tag-rest { background: rgba(50, 215, 75, 0.15); color: var(--accent-green); border: 1px solid rgba(50, 215, 75, 0.3); }
+
+        /* --- History Items with Evaluation --- */
+        .history-item {
+            padding: 15px 0;
+            border-bottom: 1px solid #333;
+        }
+        .ai-concept {
+            margin-top: 8px;
+            font-style: italic;
+            color: var(--accent-purple);
+            font-size: 0.9em;
+            background: rgba(191, 90, 242, 0.1);
+            padding: 8px;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-purple);
+        }
+
+        /* --- Navigation --- */
         .nav-bar {
             position: fixed;
             bottom: 0;
             width: 100%;
-            background: rgba(28, 28, 30, 0.95);
+            background: rgba(20, 20, 22, 0.95);
             backdrop-filter: blur(20px);
             border-top: 1px solid #333;
             display: flex;
             justify-content: space-around;
-            padding: 10px 0 25px 0; /* Extra padding for iOS home bar */
+            padding: 12px 0 30px 0;
             z-index: 1000;
         }
-        .nav-item {
-            color: var(--text-secondary);
-            text-align: center;
-            font-size: 10px;
-            flex: 1;
-        }
+        .nav-item { color: #666; text-align: center; font-size: 10px; flex: 1; transition: color 0.3s; }
         .nav-item.active { color: var(--accent-green); }
         .nav-icon { font-size: 24px; display: block; margin-bottom: 4px; }
 
-        /* Custom Visuals */
-        .stat-row { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        .stat-val { font-weight: bold; font-family: monospace; font-size: 1.1em; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(50, 215, 75, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(50, 215, 75, 0); } 100% { box-shadow: 0 0 0 0 rgba(50, 215, 75, 0); } }
         
-        .timeline-day {
-            display: flex;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #333;
-        }
-        .day-indicator {
-            width: 40px;
-            font-weight: bold;
-            color: var(--text-secondary);
-        }
-        .day-content { flex: 1; padding-left: 15px; }
-        .tag {
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.8em;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        .tag-run { background: rgba(10, 132, 255, 0.2); color: var(--accent-blue); }
-        .tag-func { background: rgba(255, 69, 58, 0.2); color: var(--accent-red); }
-        .tag-rest { background: rgba(50, 215, 75, 0.1); color: var(--accent-green); }
-
-        /* Animation */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Semáforos */
-        .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
-        .dot-green { background: var(--accent-green); box-shadow: 0 0 5px var(--accent-green); }
-        .dot-yellow { background: var(--accent-yellow); box-shadow: 0 0 5px var(--accent-yellow); }
-        .dot-red { background: var(--accent-red); box-shadow: 0 0 5px var(--accent-red); }
+        .pulse-green { animation: pulse 2s infinite; }
 
     </style>
 </head>
@@ -168,371 +209,348 @@
             <div class="date-display" id="currentDate">FECHA</div>
             <h2 id="pageTitle">Cronograma</h2>
         </div>
-        <div id="waterBadge" style="font-size:0.8em; background:#333; padding:5px 10px; border-radius:20px;">💧 0%</div>
+        <div style="display:flex; align-items:center;">
+             <span id="headerWaterPct" style="color:var(--accent-blue); font-weight:bold; font-size:0.9em; margin-right:5px;">0%</span>
+             <span style="font-size:1.2em;">💧</span>
+        </div>
     </div>
 
     <div id="tab-schedule" class="container active">
-        <div class="card">
-            <h3>Hoy Toca:</h3>
-            <h1 style="font-size: 3em; margin: 10px 0;" id="todayWorkout">...</h1>
-            <p id="todayAdvice" style="color: var(--text-secondary);">Cargando...</p>
+        <div class="card" style="border: 1px solid #333;">
+            <h3 style="color:var(--text-secondary); font-size:0.9em; text-transform:uppercase;">Entrenamiento de Hoy</h3>
+            <h1 style="font-size: 2.5em; margin: 10px 0; line-height:1.1;" id="todayWorkout">...</h1>
+            <p id="todayAdvice" style="color: var(--accent-yellow); font-weight:500;">...</p>
         </div>
         <div class="card">
-            <h3>Próximos Días</h3>
-            <div id="scheduleList"></div>
+            <h3>Próximos 5 Días</h3>
+            <div id="scheduleList" style="margin-top:10px;"></div>
         </div>
     </div>
 
     <div id="tab-food" class="container">
         <div class="card">
-            <h3>Menú del Día</h3>
+            <h3>Plan Nutricional</h3>
             <div style="margin-top:20px;">
                 <div class="timeline-day">
                     <div class="day-indicator">07:00</div>
-                    <div class="day-content">
-                        <strong>Desayuno</strong><br>
-                        <span style="color:var(--text-secondary)">Lácteo, granola, huevos.</span>
-                    </div>
+                    <div class="day-content"><strong>Desayuno</strong><br><span style="color:var(--text-secondary)">Lácteo, granola, huevos.</span></div>
                 </div>
                 <div class="timeline-day">
                     <div class="day-indicator">Post</div>
-                    <div class="day-content">
-                        <strong>Recuperación</strong><br>
-                        <span style="color:var(--text-secondary)">Carbohidrato útil + Electrolitos/Agua.</span>
-                    </div>
+                    <div class="day-content"><strong>Recuperación</strong><br><span style="color:var(--text-secondary)">Carbohidrato + Electrolitos.</span></div>
                 </div>
                 <div class="timeline-day">
                     <div class="day-indicator">13:00</div>
                     <div class="day-content">
                         <strong>Almuerzo</strong><br>
                         <span style="color:var(--accent-yellow)" id="lunchOption">Calculando...</span><br>
-                        <span style="color:var(--text-secondary)">+ Proteína, fruta/verdura.</span>
+                        <span style="color:var(--text-secondary)">+ Proteína, vegetal.</span>
                     </div>
                 </div>
                 <div class="timeline-day">
                     <div class="day-indicator">16:00</div>
-                    <div class="day-content">
-                        <strong>Tarde</strong><br>
-                        <span style="color:var(--text-secondary)">Hidratación + Snack ligero (Fruta).</span>
-                    </div>
+                    <div class="day-content"><strong>Snack</strong><br><span style="color:var(--text-secondary)">Fruta + Hidratación.</span></div>
                 </div>
                 <div class="timeline-day">
                     <div class="day-indicator">20:00</div>
-                    <div class="day-content">
-                        <strong>Cena</strong><br>
-                        <span style="color:var(--text-secondary)">Yogurt griego + Frutos secos.</span>
-                    </div>
+                    <div class="day-content"><strong>Cena</strong><br><span style="color:var(--text-secondary)">Yogurt griego + Frutos secos.</span></div>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="tab-stats" class="container">
-        <div class="card">
+        <div class="card" style="text-align:center;">
             <h3>Hidratación</h3>
-            <div style="text-align:center; margin: 20px 0;">
-                <h1 id="waterCount" style="font-size:3em; color:var(--accent-blue)">0.0 L</h1>
-                <p style="color:var(--text-secondary)">Meta: 3.5 L</p>
+            <div class="water-tank-container">
+                <div class="water-level" id="waterFill"></div>
+                <div class="water-text-overlay">
+                    <h1 id="waterCount" style="font-size:2em; margin:0;">0.0</h1>
+                    <span style="font-size:0.8em; text-transform:uppercase;">Litros</span>
+                </div>
             </div>
-            <button class="btn btn-water" onclick="addWater()">
-                <span>+ Agregar 650ml</span>
-                <span>💧</span>
+            <button class="btn" style="background-color: var(--accent-blue); color:white;" onclick="addWater()">
+                + Beber 650ml 💧
             </button>
-            <button onclick="resetWater()" style="background:transparent; color:#555; border:none; width:100%; margin-top:10px; padding:10px;">Reset Diario</button>
+            <div style="margin-top:10px; font-size:0.8em; color:var(--text-secondary);">Meta Diaria: 3.5 Litros</div>
         </div>
 
         <div class="card">
-            <h3>Registrar Entrenamiento</h3>
-            
-            <label style="color:var(--accent-blue)">Fecha del Registro</label>
+            <h3>Registrar Sesión</h3>
+            <label style="color:var(--accent-green); margin-top:10px;">FECHA DEL REGISTRO</label>
             <input type="date" id="inputDate">
-            
-            <label>Tipo de Sesión</label>
+
+            <label>ACTIVIDAD</label>
             <select id="inputType">
                 <option value="Funcional">Entrenamiento Funcional</option>
                 <option value="Running">Running</option>
                 <option value="Descanso">Descanso</option>
             </select>
 
-            <label>Kilómetros (si aplica)</label>
-            <input type="number" id="inputKm" placeholder="0.0">
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1;">
+                    <label>KCAL ACTIVAS</label>
+                    <input type="number" id="inputCals" placeholder="Ej: 440">
+                </div>
+                <div style="flex:1;">
+                    <label>DISTANCIA (KM)</label>
+                    <input type="number" id="inputKm" placeholder="Ej: 3.2">
+                </div>
+            </div>
 
-            <label>Calorías Activas (kcal)</label>
-            <input type="number" id="inputCals" placeholder="441">
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1;">
+                    <label>RECUPERACIÓN (%)</label>
+                    <input type="number" id="inputRecovery" placeholder="Peak Watch">
+                </div>
+                <div style="flex:1;">
+                    <label>SUEÑO (Horas)</label>
+                    <input type="number" id="inputSleep" placeholder="Ej: 7.5">
+                </div>
+            </div>
 
-            <label>Horas de Sueño</label>
-            <input type="number" id="inputSleep" placeholder="7.5">
-
-            <label>Recuperación (%) (Peak Watch)</label>
-            <input type="number" id="inputRecovery" placeholder="0 - 100">
-
-            <label>Esfuerzo (RPE)</label>
+            <label>ESFUERZO PERCIBIDO (RPE 1-10)</label>
             <select id="inputRPE">
-                <option value="Bajo">Bajo (1-3)</option>
-                <option value="Medio">Medio (4-6)</option>
-                <option value="Alto">Alto (7-9)</option>
-                <option value="Maximo">Máximo (10)</option>
+                <option value="3">1-3 (Suave)</option>
+                <option value="5">4-6 (Moderado)</option>
+                <option value="8">7-9 (Intenso)</option>
+                <option value="10">10 (Máximo)</option>
             </select>
 
-            <button class="btn" onclick="saveData()">GUARDAR DATOS</button>
+            <button class="btn" onclick="saveData()">GUARDAR Y ANALIZAR</button>
         </div>
     </div>
 
     <div id="tab-summary" class="container">
         <div class="card">
-            <h3>Semáforo de Rendimiento</h3>
-            <div id="trafficLight" style="margin-top:15px;">
-                </div>
-        </div>
-        <div class="card">
-            <h3>Historial Reciente</h3>
+            <h3>Historial & Análisis</h3>
             <div id="historyLog"></div>
         </div>
-        <div class="card" style="border: 1px solid #333;">
-            <p style="font-size:0.8em; color: #555; text-align: center;">Carlos Tracker v1.1 • Data en LocalStorage</p>
-            <button onclick="clearData()" style="background:#333; color:white; border:none; padding:10px; border-radius:8px; width:100%; margin-top:10px;">Borrar Todos los Datos</button>
+        
+        <div class="card" style="border:1px solid #333;">
+            <button onclick="clearData()" style="background:transparent; color:var(--accent-red); border:none; width:100%; padding:10px;">⚠️ Borrar Base de Datos</button>
         </div>
     </div>
 
     <div class="nav-bar">
         <div class="nav-item active" onclick="switchTab('schedule', this)">
-            <span class="nav-icon">📅</span>
-            Cronograma
+            <span class="nav-icon">📅</span> Cronograma
         </div>
         <div class="nav-item" onclick="switchTab('food', this)">
-            <span class="nav-icon">🍎</span>
-            Alimentación
+            <span class="nav-icon">🍎</span> Nutrición
         </div>
         <div class="nav-item" onclick="switchTab('stats', this)">
-            <span class="nav-icon">⌚</span>
-            Registro
+            <span class="nav-icon">⌚</span> Registro
         </div>
         <div class="nav-item" onclick="switchTab('summary', this)">
-            <span class="nav-icon">📊</span>
-            Resumen
+            <span class="nav-icon">📊</span> Resumen
         </div>
     </div>
 
     <script>
-        // --- CONFIGURACIÓN ---
-        const startDate = new Date('2026-02-16T00:00:00'); // Lunes Inicio Oficial
+        // --- CORE LOGIC ---
         const today = new Date();
-        
-        // --- LÓGICA DE NAVEGACIÓN ---
+        const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+        // Navegación
         function switchTab(tabId, element) {
             document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
             document.getElementById('tab-' + tabId).classList.add('active');
-            
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             element.classList.add('active');
             
-            // Actualizar header
-            const titles = { 'schedule': 'Cronograma', 'food': 'Alimentación', 'stats': 'Registro Diario', 'summary': 'Resumen Global' };
+            const titles = { 'schedule': 'Tu Plan', 'food': 'Combustible', 'stats': 'Registro', 'summary': 'Progreso' };
             document.getElementById('pageTitle').innerText = titles[tabId];
 
             if(tabId === 'summary') renderSummary();
         }
 
-        // --- LÓGICA DE FECHAS Y CRONOGRAMA ---
-        const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-
-        function initDate() {
+        // Inicialización
+        window.onload = function() {
             const dateStr = `${daysOfWeek[today.getDay()]} ${today.getDate()} ${months[today.getMonth()]}`;
             document.getElementById('currentDate').innerText = dateStr;
-            
-            // CAMBIO V1.1: Inicializar selector de fecha con HOY
-            document.getElementById('inputDate').valueAsDate = new Date();
+            document.getElementById('inputDate').valueAsDate = new Date(); // Set date picker to today
             
             renderSchedule();
             renderLunch();
+            loadWater();
         }
 
+        // --- 1. CRONOGRAMA LOGIC (5 Días) ---
         function renderSchedule() {
-            // Lógica Semanal:
-            // Lun: Funcional | Mar: Running | Mie: Funcional | Jue: Descanso Activo | Vie: Funcional | Sab: Run/Light | Dom: Descanso
             const plan = [
-                { day: 0, type: 'Descanso Real', tag: 'rest' }, // Dom
-                { day: 1, type: 'Funcional (Fuerza)', tag: 'func' }, // Lun
-                { day: 2, type: 'Running (2-3km)', tag: 'run' }, // Mar
-                { day: 3, type: 'Funcional (Metabólico)', tag: 'func' }, // Mie
-                { day: 4, type: 'Descanso Activo', tag: 'rest' }, // Jue
-                { day: 5, type: 'Funcional (Potencia)', tag: 'func' }, // Vie
-                { day: 6, type: 'Running o Ligero', tag: 'run' }  // Sab
+                { day: 0, type: 'Descanso Real', tag: 'rest', advice: 'Dormir repara tejidos. Desconecta.' },
+                { day: 1, type: 'Funcional (Fuerza)', tag: 'func', advice: 'Prioriza técnica sobre peso hoy.' },
+                { day: 2, type: 'Running (2-3km)', tag: 'run', advice: 'Ritmo conversacional. Suelta piernas.' },
+                { day: 3, type: 'Funcional (Metab)', tag: 'func', advice: 'Mantén pulsaciones altas y constantes.' },
+                { day: 4, type: 'Descanso Activo', tag: 'rest', advice: 'Caminata o estiramientos suaves.' },
+                { day: 5, type: 'Funcional (Power)', tag: 'func', advice: 'Explosividad en cada movimiento.' },
+                { day: 6, type: 'Running / Ligero', tag: 'run', advice: 'Escucha a tu cuerpo: ¿Más o menos?' }
             ];
 
-            const currentDayIndex = today.getDay();
-            const todayPlan = plan.find(p => p.day === currentDayIndex);
-
-            document.getElementById('todayWorkout').innerText = todayPlan.type;
+            const todayIdx = today.getDay();
+            const todayData = plan.find(p => p.day === todayIdx);
             
-            // Consejo contextual
-            let advice = "";
-            if(todayPlan.tag === 'func') advice = "Enfócate en la técnica. 147 LPM promedio es la meta.";
-            if(todayPlan.tag === 'run') advice = "Suave y constante. Limpia el ácido láctico.";
-            if(todayPlan.tag === 'rest') advice = "Dormir y comer bien es parte del entrenamiento.";
-            document.getElementById('todayAdvice').innerText = advice;
+            document.getElementById('todayWorkout').innerText = todayData.type;
+            document.getElementById('todayAdvice').innerText = todayData.advice;
 
-            // Renderizar lista próximos días
             let listHTML = '';
-            for(let i=1; i<=3; i++) {
+            // Loop para los próximos 5 DÍAS
+            for(let i=1; i<=5; i++) {
                 let nextDay = new Date(today);
                 nextDay.setDate(today.getDate() + i);
                 let dayIdx = nextDay.getDay();
                 let p = plan.find(x => x.day === dayIdx);
+                
                 listHTML += `
                 <div class="timeline-day">
                     <div class="day-indicator">${daysOfWeek[dayIdx].substring(0,3)}</div>
                     <div class="day-content">${p.type}</div>
-                    <span class="tag tag-${p.tag}">Prox</span>
+                    <span class="tag tag-${p.tag}">Futuro</span>
                 </div>`;
             }
             document.getElementById('scheduleList').innerHTML = listHTML;
         }
 
+        // --- 2. NUTRICIÓN LOGIC ---
         function renderLunch() {
-            // Alternar Arroz/Papa basado en día par/impar
             const isEven = today.getDate() % 2 === 0;
-            document.getElementById('lunchOption').innerText = isEven ? "Opción: Arroz" : "Opción: Papa";
+            document.getElementById('lunchOption').innerText = isEven ? "Opción: Arroz (Día Par)" : "Opción: Papa (Día Impar)";
         }
 
-        // --- LÓGICA DE AGUA ---
+        // --- 3. AGUA ANIMADA LOGIC ---
         let waterTotal = 0;
+        const WATER_GOAL = 3500;
+
         function loadWater() {
             const savedDate = localStorage.getItem('carlos_water_date');
             const savedAmount = localStorage.getItem('carlos_water_amount');
-            const todayStr = today.toDateString();
-
-            if (savedDate === todayStr && savedAmount) {
+            
+            if (savedDate === today.toDateString() && savedAmount) {
                 waterTotal = parseFloat(savedAmount);
             } else {
-                waterTotal = 0; // Reset si es nuevo día
+                waterTotal = 0;
             }
             updateWaterUI();
         }
 
         function addWater() {
             waterTotal += 650;
-            saveWater();
-            updateWaterUI();
-        }
-
-        function resetWater() {
-            waterTotal = 0;
-            saveWater();
-            updateWaterUI();
-        }
-
-        function saveWater() {
             localStorage.setItem('carlos_water_date', today.toDateString());
             localStorage.setItem('carlos_water_amount', waterTotal);
+            updateWaterUI();
         }
 
         function updateWaterUI() {
             let liters = (waterTotal / 1000).toFixed(2);
-            document.getElementById('waterCount').innerText = `${liters} L`;
-            let pct = Math.min(100, Math.round((waterTotal / 3500) * 100));
-            document.getElementById('waterBadge').innerText = `💧 ${pct}%`;
+            document.getElementById('waterCount').innerText = liters;
             
-            if(waterTotal >= 3500) document.getElementById('waterCount').style.color = '#32d74b'; // Green
+            // Cálculo del porcentaje para la animación
+            let pct = Math.min(100, (waterTotal / WATER_GOAL) * 100);
+            
+            // Actualizar altura del tanque (Animación CSS)
+            document.getElementById('waterFill').style.height = pct + '%';
+            document.getElementById('headerWaterPct').innerText = Math.round(pct) + '%';
         }
 
-        // --- LÓGICA DE DATOS (LOCALSTORAGE) ---
+        // --- 4. REGISTRO & EVALUACIÓN IA ---
+        
+        function generateEvaluation(type, rec, sleep, rpe, cals) {
+            // Lógica de interpretación "Humana"
+            if(type === 'Descanso') {
+                return "Día de descanso respetado. Tu sistema nervioso te lo agradece.";
+            }
+            
+            let concept = "";
+            rec = parseInt(rec);
+            sleep = parseFloat(sleep);
+            rpe = parseInt(rpe);
+            
+            if(rec < 35) {
+                concept = "⚠️ OJO: Recuperación crítica. Tu cuerpo está luchando. Prioriza sueño hoy.";
+            } else if (rec > 80 && rpe >= 8) {
+                concept = "🔥 Máquina Total: Alta exigencia con el cuerpo listo para responder.";
+            } else if (sleep < 6) {
+                concept = "Entrenamiento cumplido, pero con deuda de sueño. Cuidado con lesiones.";
+            } else if (cals > 500) {
+                concept = "Excelente gasto metabólico. Has activado la quema de grasas post-reno.";
+            } else {
+                concept = "Sesión sólida y cumplidora. La constancia es tu mejor arma.";
+            }
+            return concept;
+        }
+
         function saveData() {
-            // CAMBIO V1.1: Usar la fecha del input, no la fecha actual
             const dateInputVal = document.getElementById('inputDate').value;
-            // Hack para corregir zona horaria local al crear el objeto Date
             const selectedDate = dateInputVal ? new Date(dateInputVal + 'T12:00:00') : new Date();
+            
+            const type = document.getElementById('inputType').value;
+            const km = document.getElementById('inputKm').value || 0;
+            const cals = document.getElementById('inputCals').value || 0;
+            const sleep = document.getElementById('inputSleep').value || 0;
+            const recovery = document.getElementById('inputRecovery').value || 0;
+            const rpe = document.getElementById('inputRPE').value;
+
+            // Generar el concepto automático
+            const conceptText = generateEvaluation(type, recovery, sleep, rpe, cals);
 
             const entry = {
                 date: selectedDate.toISOString(),
-                type: document.getElementById('inputType').value,
-                km: document.getElementById('inputKm').value || 0,
-                cals: document.getElementById('inputCals').value || 0,
-                sleep: document.getElementById('inputSleep').value || 0,
-                recovery: document.getElementById('inputRecovery').value || 0,
-                rpe: document.getElementById('inputRPE').value
+                type: type,
+                km: km,
+                cals: cals,
+                sleep: sleep,
+                recovery: recovery,
+                rpe: rpe,
+                concept: conceptText // Nuevo campo
             };
 
             let history = JSON.parse(localStorage.getItem('carlos_data_history') || '[]');
-            history.unshift(entry); // Agregar al inicio
-            
-            // Ordenar por fecha (más reciente primero) para que no quede desordenado si metes datos viejos
+            history.unshift(entry);
             history.sort((a, b) => new Date(b.date) - new Date(a.date));
-
             localStorage.setItem('carlos_data_history', JSON.stringify(history));
 
-            alert(`✅ Datos guardados para el: ${selectedDate.toLocaleDateString()}`);
-            // Limpiar campos
-            document.getElementById('inputCals').value = '';
-            document.getElementById('inputKm').value = '';
+            alert("✅ Datos analizados y guardados.");
+            switchTab('summary', document.querySelector('.nav-item:last-child'));
         }
 
         function renderSummary() {
             let history = JSON.parse(localStorage.getItem('carlos_data_history') || '[]');
-            
-            // 1. Semáforo
-            let trafficHTML = '';
-            if(history.length > 0) {
-                let last = history[0];
-                let rec = parseInt(last.recovery);
-                
-                let colorClass = 'dot-green';
-                let statusMsg = 'Sistema Óptimo';
-                
-                if(rec < 40) { colorClass = 'dot-red'; statusMsg = 'Peligro: Necesitas Descanso'; }
-                else if(rec < 70) { colorClass = 'dot-yellow'; statusMsg = 'Precaución: Carga Media'; }
-
-                trafficHTML = `
-                    <div style="display:flex; align-items:center; margin-bottom:10px;">
-                        <span class="status-dot ${colorClass}" style="width:20px; height:20px;"></span>
-                        <h2 style="margin-left:10px;">${statusMsg}</h2>
-                    </div>
-                    <p style="color:var(--text-secondary)">Última Recup: ${rec}% | Sueño: ${last.sleep}h</p>
-                `;
-            } else {
-                trafficHTML = '<p>No hay datos suficientes aún.</p>';
-            }
-            document.getElementById('trafficLight').innerHTML = trafficHTML;
-
-            // 2. Lista Historial
             let listHTML = '';
-            history.slice(0, 7).forEach(item => { // Mostrar ultimos 7
+
+            history.slice(0, 10).forEach(item => {
                 let d = new Date(item.date);
-                // Ajuste para mostrar la fecha correctamente
                 let dateStr = `${d.getDate()}/${d.getMonth()+1}`;
+                
+                // Si es antiguo y no tiene concepto, poner uno genérico
+                let concept = item.concept || "Registro sin análisis automático.";
+
                 listHTML += `
-                <div class="stat-row">
-                    <div>
-                        <span style="color:var(--text-secondary); font-size:0.8em;">${dateStr}</span><br>
-                        <strong>${item.type}</strong>
+                <div class="history-item">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-size:0.8em; color:var(--text-secondary);">${dateStr}</span>
+                            <div style="font-weight:bold; font-size:1.1em;">${item.type}</div>
+                        </div>
+                        <div style="text-align:right;">
+                             <span style="color:var(--accent-green); font-weight:bold;">${item.cals > 0 ? item.cals + ' kcal' : ''}</span>
+                             ${item.km > 0 ? '<br><span style="font-size:0.8em; color:var(--accent-blue);">' + item.km + ' km</span>' : ''}
+                        </div>
                     </div>
-                    <div style="text-align:right;">
-                        <span class="stat-val" style="color:var(--accent-green)">${item.cals} cal</span><br>
-                        <span style="font-size:0.8em;">${item.sleep}h sueño</span>
-                    </div>
+                    <div class="ai-concept">"${concept}"</div>
                 </div>`;
             });
-            document.getElementById('historyLog').innerHTML = listHTML;
+            
+            document.getElementById('historyLog').innerHTML = listHTML || '<p style="text-align:center; margin-top:20px; color:#555;">Sin registros aún.</p>';
         }
 
         function clearData() {
-            if(confirm("¿Borrar todo el historial?")) {
-                localStorage.removeItem('carlos_data_history');
-                localStorage.removeItem('carlos_water_amount');
-                localStorage.removeItem('carlos_water_date');
-                alert("Memoria borrada.");
-                renderSummary();
-                resetWater();
+            if(confirm("¿Seguro? Esto borrará todo tu progreso.")) {
+                localStorage.clear();
+                location.reload();
             }
         }
-
-        // --- INICIALIZACIÓN ---
-        window.onload = function() {
-            initDate();
-            loadWater();
-        }
-
     </script>
 </body>
 </html>
