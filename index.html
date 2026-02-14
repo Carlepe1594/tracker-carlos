@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Carlos Tracker 2026</title>
+    <title>Carlos Tracker V1.1</title>
     <style>
         :root {
             --bg-color: #000000;
@@ -70,6 +70,14 @@
             font-size: 16px;
             box-sizing: border-box; /* Fix padding issue */
             margin-bottom: 15px;
+        }
+        /* Estilo especial para el input de fecha en iOS */
+        input[type="date"] {
+            appearance: none;
+            -webkit-appearance: none;
+            color: var(--accent-blue);
+            font-weight: bold;
+            text-align: center;
         }
         input:focus { outline: 2px solid var(--accent-green); }
 
@@ -234,7 +242,11 @@
         </div>
 
         <div class="card">
-            <h3>Registrar Entrenamiento (Apple Watch)</h3>
+            <h3>Registrar Entrenamiento</h3>
+            
+            <label style="color:var(--accent-blue)">Fecha del Registro</label>
+            <input type="date" id="inputDate">
+            
             <label>Tipo de Sesión</label>
             <select id="inputType">
                 <option value="Funcional">Entrenamiento Funcional</option>
@@ -277,7 +289,7 @@
             <div id="historyLog"></div>
         </div>
         <div class="card" style="border: 1px solid #333;">
-            <p style="font-size:0.8em; color: #555; text-align: center;">Carlos Tracker v1.0 • Data en LocalStorage</p>
+            <p style="font-size:0.8em; color: #555; text-align: center;">Carlos Tracker v1.1 • Data en LocalStorage</p>
             <button onclick="clearData()" style="background:#333; color:white; border:none; padding:10px; border-radius:8px; width:100%; margin-top:10px;">Borrar Todos los Datos</button>
         </div>
     </div>
@@ -328,6 +340,10 @@
         function initDate() {
             const dateStr = `${daysOfWeek[today.getDay()]} ${today.getDate()} ${months[today.getMonth()]}`;
             document.getElementById('currentDate').innerText = dateStr;
+            
+            // CAMBIO V1.1: Inicializar selector de fecha con HOY
+            document.getElementById('inputDate').valueAsDate = new Date();
+            
             renderSchedule();
             renderLunch();
         }
@@ -423,8 +439,13 @@
 
         // --- LÓGICA DE DATOS (LOCALSTORAGE) ---
         function saveData() {
+            // CAMBIO V1.1: Usar la fecha del input, no la fecha actual
+            const dateInputVal = document.getElementById('inputDate').value;
+            // Hack para corregir zona horaria local al crear el objeto Date
+            const selectedDate = dateInputVal ? new Date(dateInputVal + 'T12:00:00') : new Date();
+
             const entry = {
-                date: new Date().toISOString(),
+                date: selectedDate.toISOString(),
                 type: document.getElementById('inputType').value,
                 km: document.getElementById('inputKm').value || 0,
                 cals: document.getElementById('inputCals').value || 0,
@@ -435,9 +456,13 @@
 
             let history = JSON.parse(localStorage.getItem('carlos_data_history') || '[]');
             history.unshift(entry); // Agregar al inicio
+            
+            // Ordenar por fecha (más reciente primero) para que no quede desordenado si metes datos viejos
+            history.sort((a, b) => new Date(b.date) - new Date(a.date));
+
             localStorage.setItem('carlos_data_history', JSON.stringify(history));
 
-            alert("✅ Datos guardados en iPad");
+            alert(`✅ Datos guardados para el: ${selectedDate.toLocaleDateString()}`);
             // Limpiar campos
             document.getElementById('inputCals').value = '';
             document.getElementById('inputKm').value = '';
@@ -474,6 +499,7 @@
             let listHTML = '';
             history.slice(0, 7).forEach(item => { // Mostrar ultimos 7
                 let d = new Date(item.date);
+                // Ajuste para mostrar la fecha correctamente
                 let dateStr = `${d.getDate()}/${d.getMonth()+1}`;
                 listHTML += `
                 <div class="stat-row">
