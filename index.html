@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Carlos Tracker 2026</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --card-bg: #1c1c1e;
+            --text-primary: #ffffff;
+            --text-secondary: #8e8e93;
+            --accent-green: #32d74b;
+            --accent-red: #ff453a;
+            --accent-yellow: #ffd60a;
+            --accent-blue: #0a84ff;
+            --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-stack);
+            margin: 0;
+            padding: 0;
+            padding-bottom: 80px; /* Space for nav */
+            -webkit-user-select: none;
+        }
+
+        /* Typography & Header */
+        h1, h2, h3 { margin: 0; font-weight: 600; }
+        .header {
+            padding: 20px;
+            padding-top: 50px; /* Status bar space */
+            background: rgba(28, 28, 30, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .date-display { font-size: 0.9em; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;}
+        
+        /* Containers */
+        .container { padding: 16px; display: none; animation: fadeIn 0.3s ease; }
+        .container.active { display: block; }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        /* Form Elements */
+        label { display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 0.9em; }
+        input, select {
+            width: 100%;
+            background: #2c2c2e;
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 16px;
+            box-sizing: border-box; /* Fix padding issue */
+            margin-bottom: 15px;
+        }
+        input:focus { outline: 2px solid var(--accent-green); }
+
+        /* Buttons */
+        .btn {
+            background-color: var(--accent-green);
+            color: black;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            width: 100%;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-water {
+            background-color: var(--accent-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* Navigation */
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: rgba(28, 28, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid #333;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0 25px 0; /* Extra padding for iOS home bar */
+            z-index: 1000;
+        }
+        .nav-item {
+            color: var(--text-secondary);
+            text-align: center;
+            font-size: 10px;
+            flex: 1;
+        }
+        .nav-item.active { color: var(--accent-green); }
+        .nav-icon { font-size: 24px; display: block; margin-bottom: 4px; }
+
+        /* Custom Visuals */
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .stat-val { font-weight: bold; font-family: monospace; font-size: 1.1em; }
+        
+        .timeline-day {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #333;
+        }
+        .day-indicator {
+            width: 40px;
+            font-weight: bold;
+            color: var(--text-secondary);
+        }
+        .day-content { flex: 1; padding-left: 15px; }
+        .tag {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .tag-run { background: rgba(10, 132, 255, 0.2); color: var(--accent-blue); }
+        .tag-func { background: rgba(255, 69, 58, 0.2); color: var(--accent-red); }
+        .tag-rest { background: rgba(50, 215, 75, 0.1); color: var(--accent-green); }
+
+        /* Animation */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Semáforos */
+        .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+        .dot-green { background: var(--accent-green); box-shadow: 0 0 5px var(--accent-green); }
+        .dot-yellow { background: var(--accent-yellow); box-shadow: 0 0 5px var(--accent-yellow); }
+        .dot-red { background: var(--accent-red); box-shadow: 0 0 5px var(--accent-red); }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div>
+            <div class="date-display" id="currentDate">FECHA</div>
+            <h2 id="pageTitle">Cronograma</h2>
+        </div>
+        <div id="waterBadge" style="font-size:0.8em; background:#333; padding:5px 10px; border-radius:20px;">💧 0%</div>
+    </div>
+
+    <div id="tab-schedule" class="container active">
+        <div class="card">
+            <h3>Hoy Toca:</h3>
+            <h1 style="font-size: 3em; margin: 10px 0;" id="todayWorkout">...</h1>
+            <p id="todayAdvice" style="color: var(--text-secondary);">Cargando...</p>
+        </div>
+        <div class="card">
+            <h3>Próximos Días</h3>
+            <div id="scheduleList"></div>
+        </div>
+    </div>
+
+    <div id="tab-food" class="container">
+        <div class="card">
+            <h3>Menú del Día</h3>
+            <div style="margin-top:20px;">
+                <div class="timeline-day">
+                    <div class="day-indicator">07:00</div>
+                    <div class="day-content">
+                        <strong>Desayuno</strong><br>
+                        <span style="color:var(--text-secondary)">Lácteo, granola, huevos.</span>
+                    </div>
+                </div>
+                <div class="timeline-day">
+                    <div class="day-indicator">Post</div>
+                    <div class="day-content">
+                        <strong>Recuperación</strong><br>
+                        <span style="color:var(--text-secondary)">Carbohidrato útil + Electrolitos/Agua.</span>
+                    </div>
+                </div>
+                <div class="timeline-day">
+                    <div class="day-indicator">13:00</div>
+                    <div class="day-content">
+                        <strong>Almuerzo</strong><br>
+                        <span style="color:var(--accent-yellow)" id="lunchOption">Calculando...</span><br>
+                        <span style="color:var(--text-secondary)">+ Proteína, fruta/verdura.</span>
+                    </div>
+                </div>
+                <div class="timeline-day">
+                    <div class="day-indicator">16:00</div>
+                    <div class="day-content">
+                        <strong>Tarde</strong><br>
+                        <span style="color:var(--text-secondary)">Hidratación + Snack ligero (Fruta).</span>
+                    </div>
+                </div>
+                <div class="timeline-day">
+                    <div class="day-indicator">20:00</div>
+                    <div class="day-content">
+                        <strong>Cena</strong><br>
+                        <span style="color:var(--text-secondary)">Yogurt griego + Frutos secos.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-stats" class="container">
+        <div class="card">
+            <h3>Hidratación</h3>
+            <div style="text-align:center; margin: 20px 0;">
+                <h1 id="waterCount" style="font-size:3em; color:var(--accent-blue)">0.0 L</h1>
+                <p style="color:var(--text-secondary)">Meta: 3.5 L</p>
+            </div>
+            <button class="btn btn-water" onclick="addWater()">
+                <span>+ Agregar 650ml</span>
+                <span>💧</span>
+            </button>
+            <button onclick="resetWater()" style="background:transparent; color:#555; border:none; width:100%; margin-top:10px; padding:10px;">Reset Diario</button>
+        </div>
+
+        <div class="card">
+            <h3>Registrar Entrenamiento (Apple Watch)</h3>
+            <label>Tipo de Sesión</label>
+            <select id="inputType">
+                <option value="Funcional">Entrenamiento Funcional</option>
+                <option value="Running">Running</option>
+                <option value="Descanso">Descanso</option>
+            </select>
+
+            <label>Kilómetros (si aplica)</label>
+            <input type="number" id="inputKm" placeholder="0.0">
+
+            <label>Calorías Activas (kcal)</label>
+            <input type="number" id="inputCals" placeholder="441">
+
+            <label>Horas de Sueño</label>
+            <input type="number" id="inputSleep" placeholder="7.5">
+
+            <label>Recuperación (%) (Peak Watch)</label>
+            <input type="number" id="inputRecovery" placeholder="0 - 100">
+
+            <label>Esfuerzo (RPE)</label>
+            <select id="inputRPE">
+                <option value="Bajo">Bajo (1-3)</option>
+                <option value="Medio">Medio (4-6)</option>
+                <option value="Alto">Alto (7-9)</option>
+                <option value="Maximo">Máximo (10)</option>
+            </select>
+
+            <button class="btn" onclick="saveData()">GUARDAR DATOS</button>
+        </div>
+    </div>
+
+    <div id="tab-summary" class="container">
+        <div class="card">
+            <h3>Semáforo de Rendimiento</h3>
+            <div id="trafficLight" style="margin-top:15px;">
+                </div>
+        </div>
+        <div class="card">
+            <h3>Historial Reciente</h3>
+            <div id="historyLog"></div>
+        </div>
+        <div class="card" style="border: 1px solid #333;">
+            <p style="font-size:0.8em; color: #555; text-align: center;">Carlos Tracker v1.0 • Data en LocalStorage</p>
+            <button onclick="clearData()" style="background:#333; color:white; border:none; padding:10px; border-radius:8px; width:100%; margin-top:10px;">Borrar Todos los Datos</button>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="switchTab('schedule', this)">
+            <span class="nav-icon">📅</span>
+            Cronograma
+        </div>
+        <div class="nav-item" onclick="switchTab('food', this)">
+            <span class="nav-icon">🍎</span>
+            Alimentación
+        </div>
+        <div class="nav-item" onclick="switchTab('stats', this)">
+            <span class="nav-icon">⌚</span>
+            Registro
+        </div>
+        <div class="nav-item" onclick="switchTab('summary', this)">
+            <span class="nav-icon">📊</span>
+            Resumen
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN ---
+        const startDate = new Date('2026-02-16T00:00:00'); // Lunes Inicio Oficial
+        const today = new Date();
+        
+        // --- LÓGICA DE NAVEGACIÓN ---
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            element.classList.add('active');
+            
+            // Actualizar header
+            const titles = { 'schedule': 'Cronograma', 'food': 'Alimentación', 'stats': 'Registro Diario', 'summary': 'Resumen Global' };
+            document.getElementById('pageTitle').innerText = titles[tabId];
+
+            if(tabId === 'summary') renderSummary();
+        }
+
+        // --- LÓGICA DE FECHAS Y CRONOGRAMA ---
+        const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+        function initDate() {
+            const dateStr = `${daysOfWeek[today.getDay()]} ${today.getDate()} ${months[today.getMonth()]}`;
+            document.getElementById('currentDate').innerText = dateStr;
+            renderSchedule();
+            renderLunch();
+        }
+
+        function renderSchedule() {
+            // Lógica Semanal:
+            // Lun: Funcional | Mar: Running | Mie: Funcional | Jue: Descanso Activo | Vie: Funcional | Sab: Run/Light | Dom: Descanso
+            const plan = [
+                { day: 0, type: 'Descanso Real', tag: 'rest' }, // Dom
+                { day: 1, type: 'Funcional (Fuerza)', tag: 'func' }, // Lun
+                { day: 2, type: 'Running (2-3km)', tag: 'run' }, // Mar
+                { day: 3, type: 'Funcional (Metabólico)', tag: 'func' }, // Mie
+                { day: 4, type: 'Descanso Activo', tag: 'rest' }, // Jue
+                { day: 5, type: 'Funcional (Potencia)', tag: 'func' }, // Vie
+                { day: 6, type: 'Running o Ligero', tag: 'run' }  // Sab
+            ];
+
+            const currentDayIndex = today.getDay();
+            const todayPlan = plan.find(p => p.day === currentDayIndex);
+
+            document.getElementById('todayWorkout').innerText = todayPlan.type;
+            
+            // Consejo contextual
+            let advice = "";
+            if(todayPlan.tag === 'func') advice = "Enfócate en la técnica. 147 LPM promedio es la meta.";
+            if(todayPlan.tag === 'run') advice = "Suave y constante. Limpia el ácido láctico.";
+            if(todayPlan.tag === 'rest') advice = "Dormir y comer bien es parte del entrenamiento.";
+            document.getElementById('todayAdvice').innerText = advice;
+
+            // Renderizar lista próximos días
+            let listHTML = '';
+            for(let i=1; i<=3; i++) {
+                let nextDay = new Date(today);
+                nextDay.setDate(today.getDate() + i);
+                let dayIdx = nextDay.getDay();
+                let p = plan.find(x => x.day === dayIdx);
+                listHTML += `
+                <div class="timeline-day">
+                    <div class="day-indicator">${daysOfWeek[dayIdx].substring(0,3)}</div>
+                    <div class="day-content">${p.type}</div>
+                    <span class="tag tag-${p.tag}">Prox</span>
+                </div>`;
+            }
+            document.getElementById('scheduleList').innerHTML = listHTML;
+        }
+
+        function renderLunch() {
+            // Alternar Arroz/Papa basado en día par/impar
+            const isEven = today.getDate() % 2 === 0;
+            document.getElementById('lunchOption').innerText = isEven ? "Opción: Arroz" : "Opción: Papa";
+        }
+
+        // --- LÓGICA DE AGUA ---
+        let waterTotal = 0;
+        function loadWater() {
+            const savedDate = localStorage.getItem('carlos_water_date');
+            const savedAmount = localStorage.getItem('carlos_water_amount');
+            const todayStr = today.toDateString();
+
+            if (savedDate === todayStr && savedAmount) {
+                waterTotal = parseFloat(savedAmount);
+            } else {
+                waterTotal = 0; // Reset si es nuevo día
+            }
+            updateWaterUI();
+        }
+
+        function addWater() {
+            waterTotal += 650;
+            saveWater();
+            updateWaterUI();
+        }
+
+        function resetWater() {
+            waterTotal = 0;
+            saveWater();
+            updateWaterUI();
+        }
+
+        function saveWater() {
+            localStorage.setItem('carlos_water_date', today.toDateString());
+            localStorage.setItem('carlos_water_amount', waterTotal);
+        }
+
+        function updateWaterUI() {
+            let liters = (waterTotal / 1000).toFixed(2);
+            document.getElementById('waterCount').innerText = `${liters} L`;
+            let pct = Math.min(100, Math.round((waterTotal / 3500) * 100));
+            document.getElementById('waterBadge').innerText = `💧 ${pct}%`;
+            
+            if(waterTotal >= 3500) document.getElementById('waterCount').style.color = '#32d74b'; // Green
+        }
+
+        // --- LÓGICA DE DATOS (LOCALSTORAGE) ---
+        function saveData() {
+            const entry = {
+                date: new Date().toISOString(),
+                type: document.getElementById('inputType').value,
+                km: document.getElementById('inputKm').value || 0,
+                cals: document.getElementById('inputCals').value || 0,
+                sleep: document.getElementById('inputSleep').value || 0,
+                recovery: document.getElementById('inputRecovery').value || 0,
+                rpe: document.getElementById('inputRPE').value
+            };
+
+            let history = JSON.parse(localStorage.getItem('carlos_data_history') || '[]');
+            history.unshift(entry); // Agregar al inicio
+            localStorage.setItem('carlos_data_history', JSON.stringify(history));
+
+            alert("✅ Datos guardados en iPad");
+            // Limpiar campos
+            document.getElementById('inputCals').value = '';
+            document.getElementById('inputKm').value = '';
+        }
+
+        function renderSummary() {
+            let history = JSON.parse(localStorage.getItem('carlos_data_history') || '[]');
+            
+            // 1. Semáforo
+            let trafficHTML = '';
+            if(history.length > 0) {
+                let last = history[0];
+                let rec = parseInt(last.recovery);
+                
+                let colorClass = 'dot-green';
+                let statusMsg = 'Sistema Óptimo';
+                
+                if(rec < 40) { colorClass = 'dot-red'; statusMsg = 'Peligro: Necesitas Descanso'; }
+                else if(rec < 70) { colorClass = 'dot-yellow'; statusMsg = 'Precaución: Carga Media'; }
+
+                trafficHTML = `
+                    <div style="display:flex; align-items:center; margin-bottom:10px;">
+                        <span class="status-dot ${colorClass}" style="width:20px; height:20px;"></span>
+                        <h2 style="margin-left:10px;">${statusMsg}</h2>
+                    </div>
+                    <p style="color:var(--text-secondary)">Última Recup: ${rec}% | Sueño: ${last.sleep}h</p>
+                `;
+            } else {
+                trafficHTML = '<p>No hay datos suficientes aún.</p>';
+            }
+            document.getElementById('trafficLight').innerHTML = trafficHTML;
+
+            // 2. Lista Historial
+            let listHTML = '';
+            history.slice(0, 7).forEach(item => { // Mostrar ultimos 7
+                let d = new Date(item.date);
+                let dateStr = `${d.getDate()}/${d.getMonth()+1}`;
+                listHTML += `
+                <div class="stat-row">
+                    <div>
+                        <span style="color:var(--text-secondary); font-size:0.8em;">${dateStr}</span><br>
+                        <strong>${item.type}</strong>
+                    </div>
+                    <div style="text-align:right;">
+                        <span class="stat-val" style="color:var(--accent-green)">${item.cals} cal</span><br>
+                        <span style="font-size:0.8em;">${item.sleep}h sueño</span>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('historyLog').innerHTML = listHTML;
+        }
+
+        function clearData() {
+            if(confirm("¿Borrar todo el historial?")) {
+                localStorage.removeItem('carlos_data_history');
+                localStorage.removeItem('carlos_water_amount');
+                localStorage.removeItem('carlos_water_date');
+                alert("Memoria borrada.");
+                renderSummary();
+                resetWater();
+            }
+        }
+
+        // --- INICIALIZACIÓN ---
+        window.onload = function() {
+            initDate();
+            loadWater();
+        }
+
+    </script>
+</body>
+</html>
